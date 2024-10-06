@@ -1,0 +1,20 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: rabbitmq-scaledobject
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: listener
+  minReplicaCount: 5 # min listeners
+  maxReplicaCount: 100 # max listeners
+  triggers:
+  - type: rabbitmq
+    metadata:
+      host: amqp://myuser:mypassword@rabbitmq:5672/ # Update with your RabbitMQ service host
+      protocol: auto # or specify 'amqp' or 'http'
+      mode: QueueLength # QueueLength or MessageRate
+      value: "50" # threshold for scaling, either message backlog or publish/sec per instance
+      queueName: "ZakautDrisha" # replace with your queue name
+      # unsafeSsl: true # Optional. Use if RabbitMQ server does not have a valid SSL certificate
+      hostFromEnv: 'rabbitmq' # Optional. You can use this instead of `host` parameter
