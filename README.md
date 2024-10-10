@@ -4,7 +4,7 @@
 
 This repository contains the infrastructure and configuration files for deploying a scalable architecture on **Google Kubernetes Engine (GKE)**. The architecture includes **RabbitMQ**, **Redis**, and **KEDA** for event-driven autoscaling, with configuration settings for the **Listener** and **Publisher** pods.
 
-![Architecture Diagram](path-to-image-file)
+![Architecture Diagram](https://github.com/Nadav23AnT/K8s-Event-Driven-Microservices/blob/main/A%20detailed%20architecture%20diagram%20illustrating%20how%20GKE%2C%20RabbitMQ%2C%20Redis%2C%20and%20KEDA%20work%20together%20in%20an%20event-driven%20microservices%20setup.png)
 
 ## Overview
 
