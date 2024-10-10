@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NAMESPACE="bbg-zak-dev"
+NAMESPACE="test-rabbitmq"
 
 # Function to print and run commands
 run_command() {
@@ -19,9 +19,9 @@ start_services() {
     run_command "kubectl apply -f redis-service.yaml --namespace $NAMESPACE"
 
     echo "Creating configmap..."
-    run_command "kubectl create configmap listener-appsettings-config --from-file=appsettings/listen-conf/appsettings.dev.json --namespace $NAMESPACE"
-    run_command "kubectl create configmap publisher-appsettings-config --from-file=appsettings/publish-conf/appsettings.dev.json --namespace $NAMESPACE"
-
+    run_command "kubectl create configmap listener-appsettings-config --from-file=appsettings/listen-conf/appsettings.dev.json --namespace $NAMESPACE" # Replace this - used for .NET app 
+    run_command "kubectl create configmap publisher-appsettings-config --from-file=appsettings/publish-conf/appsettings.dev.json --namespace $NAMESPACE" # Replace this - used for .NET app 
+ 
     echo "Applying listener deployment and publisher job..."
     run_command "kubectl apply -f listener-deployment.yaml --namespace $NAMESPACE"
     run_command "kubectl apply -f publisher-job.yaml --namespace $NAMESPACE"
