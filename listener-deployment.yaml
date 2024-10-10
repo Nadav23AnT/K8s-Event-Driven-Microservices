@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: listener
-        image: me-west1-docker.pkg.dev/dgt-gcp-moe-devops/bbg-gke-test/listener:1.0.4
+        image: [IMAGE LOCATION] # Replace HERE
         resources:
           requests:
             memory: "128Mi"
