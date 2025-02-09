@@ -1,10 +1,10 @@
-# BBG-Test Cluster
+# Event-Driven K8s Cluster
 
 
 
 
 ## 🌟 Overview
-The **BBG-Test Project** showcases a cutting-edge Kubernetes-based architecture designed to facilitate seamless communication between a **RabbitMQ Listener** and a **Publisher**. This system is built for scalable, efficient message processing while leveraging Kubernetes for robust container orchestration.
+The **Event-Driven K8s Cluster Project** showcases a cutting-edge Kubernetes-based architecture designed to facilitate seamless communication between a **RabbitMQ Listener** and a **Publisher**. This system is built for scalable, efficient message processing while leveraging Kubernetes for robust container orchestration.
 
 
 ## 🚀 Key Features
@@ -65,7 +65,7 @@ The system comprises the following key components:
 The repository contains the following folders and files:
 
 ```
-BBG-Test
+main
 │
 ├── keda
 │   └── (KEDA ScaledObject definitions for autoscaling Listener pods)
@@ -124,7 +124,7 @@ BBG-Test
 ### Step 1️⃣: Clone the Repository
 ```bash
 git clone <repository-url>
-cd bbg-test
+cd <folder>
 ```
 
 ### Step 2️⃣: Change variables values
