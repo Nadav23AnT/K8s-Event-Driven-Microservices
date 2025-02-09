@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-internal-lb
+  namespace: {{ .Values.namespace }}
+  annotations:
+    networking.gke.io/load-balancer-type: "Internal"
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster
+  loadBalancerIP: {{ .Values.rabbitmq.loadBalancerIP }}
+  ports:
+  - name: amqp
+    port: {{ .Values.rabbitmq.internalLB.ports.amqp.port }}
+    protocol: TCP
+    targetPort: {{ .Values.rabbitmq.internalLB.ports.amqp.targetPort }}
+  - name: management
+    port: {{ .Values.rabbitmq.internalLB.ports.management.port }}
+    protocol: TCP
+    targetPort: {{ .Values.rabbitmq.internalLB.ports.management.targetPort }}
+  selector:
+    app.kubernetes.io/instance: rabbitmq

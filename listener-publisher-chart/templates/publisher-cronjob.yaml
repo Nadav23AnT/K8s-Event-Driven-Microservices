@@ -1,0 +1,60 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: publisher-cronjob
+  namespace: {{ .Values.namespace }}
+spec:
+  schedule: {{ .Values.publisher.schedule | quote }}
+  jobTemplate:
+    spec:
+      parallelism: 1
+      ttlSecondsAfterFinished: 120
+      template:
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution: # Strict rules
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: nodepool
+                        operator: In
+                        values:
+                          - {{ .Values.nodeAffinity.base_nodepool }}
+                          - {{ .Values.nodeAffinity.primary_nodepool }}
+              preferredDuringSchedulingIgnoredDuringExecution: # Dynamic preferences
+                - weight: 1 
+                  preference:
+                    matchExpressions:
+                      - key: nodepool
+                        operator: In
+                        values:
+                          - {{ .Values.nodeAffinity.primary_nodepool }}
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: nodepool
+                        operator: In
+                        values:
+                          - {{ .Values.nodeAffinity.base_nodepool }}
+          containers:
+          - name: publisher
+            image: {{ .Values.publisher.image.repository }}@{{ .Values.publisher.image.tag }}
+            resources:
+              limits:
+                memory: {{ .Values.publisher.resources.limits.memory }}
+                cpu: {{ .Values.publisher.resources.limits.cpu }}
+            env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: {{ .Values.publisher.env.ASPNETCORE_ENVIRONMENT }}
+            volumeMounts:
+            - name: config-volume
+              mountPath: /app/appsettings.dev.json
+              subPath: appsettings.dev.json
+          volumes:
+          - name: config-volume
+            configMap:
+              name: publisher-appsettings-config
+          restartPolicy: Never
+      activeDeadlineSeconds: 3300
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1

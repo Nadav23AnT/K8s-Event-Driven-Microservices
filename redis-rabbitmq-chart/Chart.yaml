@@ -1,0 +1,6 @@
+apiVersion: v2
+name: redis-rabbitmq-chart
+description: A Helm chart for Redis and RabbitMQ components (with KEDA scaler )
+type: application
+version: 0.1.0
+appVersion: "1.0"

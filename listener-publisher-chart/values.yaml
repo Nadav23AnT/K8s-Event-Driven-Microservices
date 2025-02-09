@@ -1,0 +1,55 @@
+namespace: dev
+
+nodeAffinity:
+  primary_nodepool: primary
+  base_nodepool: base
+
+nodePools:
+  base:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: nodepool
+                operator: In
+                values:
+                  - base
+  primary:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: nodepool
+                operator: In
+                values:
+                  - primary
+
+
+listener:
+  replicaCount: 0
+  image:
+    repository: # Image location
+    tag: # Image tag
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "250m"
+    limits:
+      memory: "128Mi"
+      cpu: "250m"
+  env:
+    ASPNETCORE_ENVIRONMENT: dev
+
+publisher:
+  image:
+    repository: # Image location
+    tag: # Image location
+  resources:
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+  env:
+    ASPNETCORE_ENVIRONMENT: dev
+  schedule: "*/1 * * * *" 
+
+  

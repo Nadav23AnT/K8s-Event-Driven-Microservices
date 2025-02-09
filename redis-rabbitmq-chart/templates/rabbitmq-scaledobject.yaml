@@ -1,0 +1,21 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: rabbitmq-scaledobject
+  namespace: {{ .Values.namespace }}
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: {{ .Values.rabbitmq.scaledObject.scaleTargetRef.deployment }}
+  minReplicaCount: {{ .Values.rabbitmq.scaledObject.minReplicaCount }}
+  maxReplicaCount: {{ .Values.rabbitmq.scaledObject.maxReplicaCount }}
+  pollingInterval: {{ .Values.rabbitmq.scaledObject.pollingInterval }}
+  cooldownPeriod: {{ .Values.rabbitmq.scaledObject.cooldownPeriod }}
+  triggers:
+  - type: rabbitmq
+    metadata:
+      host: {{ .Values.rabbitmq.scaledObject.trigger.host }}
+      protocol: {{ .Values.rabbitmq.scaledObject.trigger.protocol }}
+      mode: {{ .Values.rabbitmq.scaledObject.trigger.mode }}
+      value: "{{ .Values.rabbitmq.scaledObject.trigger.value }}"
+      queueName: "{{ .Values.rabbitmq.scaledObject.trigger.queueName }}"

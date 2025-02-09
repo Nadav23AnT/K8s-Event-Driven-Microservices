@@ -1,0 +1,6 @@
+apiVersion: v2
+name: listener-publisher-chart
+description: A Helm chart for deploying the listener and publisher applications
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

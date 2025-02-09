@@ -1,37 +1,51 @@
 #!/bin/bash
 
-NAMESPACE="test-rabbitmq"
+NAMESPACE="dev"
 
 # Function to print and run commands
 run_command() {
     echo -e "\n\033[1;34m$1\033[0m"
     eval $1
 }
+# auth: gcloud container clusters get-credentials bbg-zak-gke-cluster --location me-west1
+gcloud container clusters get-credentials bbg-zak-gke-cluster \
+    --region me-west1 \
+    --project=dgt-gcp-moe-bbg-test \
+    --impersonate-service-account=gke-sa-admin@dgt-gcp-moe-bbg-test.iam.gserviceaccount.com
+# kubectl create configmap ip-masq-agent \
+#    --namespace=kube-system \
+#    --from-file=config=/home/nadav_chen/GIT/moe-bbg-test/config-ip.yaml
 
-# Function to start everything
-start_services() {
-    echo "Starting RabbitMQ and KEDA..."
-    run_command "helm install rabbitmq ./dep/rabbitmq/ -f dep/rabbitmq/values.yaml --namespace $NAMESPACE"
-    run_command "helm install keda ./dep/keda -f dep/keda/values.yaml --namespace $NAMESPACE"
+# Function to start dependencies (Redis, RabbitMQ, Internal LB, and ScaledObject)
+start_dependencies() {
+    echo "Starting RabbitMQ..."
+    # Installing RabbitMQ using Helm
+    run_command "helm install rabbitmq rabbitmq --namespace $NAMESPACE -f ./rabbitmq/values.yaml"
+    
+    echo "Installing KEDA..."
+    # Installing KEDA using Helm
+    run_command "helm install keda keda --namespace $NAMESPACE -f ./keda/values.yaml"
 
-    echo "Applying Redis deployment and service..."
-    run_command "kubectl apply -f redis-deployment.yaml --namespace $NAMESPACE"
-    run_command "kubectl apply -f redis-service.yaml --namespace $NAMESPACE"
+    echo "Starting Redis and RabbitMQ-related dependencies..."
 
-    echo "Creating configmap..."
-    run_command "kubectl create configmap listener-appsettings-config --from-file=appsettings/listen-conf/appsettings.dev.json --namespace $NAMESPACE" # Replace this - used for .NET app 
-    run_command "kubectl create configmap publisher-appsettings-config --from-file=appsettings/publish-conf/appsettings.dev.json --namespace $NAMESPACE" # Replace this - used for .NET app 
- 
-    echo "Applying listener deployment and publisher job..."
-    run_command "kubectl apply -f listener-deployment.yaml --namespace $NAMESPACE"
-    run_command "kubectl apply -f publisher-job.yaml --namespace $NAMESPACE"
-
-    # echo "Applying RabbitMQ ScaledObject..."
-    # run_command "kubectl apply -f rabbitmq-scaler.yaml --namespace $NAMESPACE"
+    # Install Redis and RabbitMQ chart
+    run_command "helm install redis-rabbitmq ./redis-rabbitmq-chart --namespace $NAMESPACE -f ./redis-rabbitmq-chart/values.yaml"
 
     echo "Running network test pod..."
-    run_command "kubectl run --namespace $NAMESPACE network-test-pod --image=curlimages/curl --restart=Never --command -- sleep 3600 "
+    run_command "kubectl run toolbox --image=busybox:latest -n $NAMESPACE --restart=Never -- sleep 3600"
+    echo "Dependencies started successfully!"
 }
+
+# Function to start services (Listener and Publisher)
+start_services() {
+    echo "Starting Listener and Publisher services..."
+
+    # Install Listener and Publisher chart
+    run_command "helm install listener-publisher ./listener-publisher-chart --namespace $NAMESPACE -f ./listener-publisher-chart/values.yaml"
+
+    echo "Services started successfully!"
+}
+
 
 # Function to validate services
 validate_services() {
@@ -42,60 +56,85 @@ validate_services() {
     run_command "kubectl get cronjob --namespace $NAMESPACE"
 }
 
-# Function to enable port forwarding for RabbitMQ
-port_forward() {
-    echo "Port forwarding for RabbitMQ..."
-    run_command "kubectl port-forward svc/rabbitmq 15672:15672 --namespace $NAMESPACE"
-}
+# Function to uninstall dependencies (Redis, RabbitMQ, and Internal LB)
+uninstall_dependencies() {
 
-# Function to uninstall everything
-uninstall_services() {
+    echo "Uninstalling Redis and RabbitMQ-related dependencies..."
+
+    # Uninstall Redis and RabbitMQ chart
+    run_command "helm uninstall redis-rabbitmq --namespace $NAMESPACE"
+
+    echo "Dependencies uninstalled successfully!"
+
     echo "Uninstalling KEDA and RabbitMQ Helm releases..."
-    run_command "helm uninstall keda --namespace $NAMESPACE"
+
     run_command "helm uninstall rabbitmq --namespace $NAMESPACE"
-
-    echo "Deleting listener, publisher, and Redis deployments and services..."
-    run_command "kubectl delete deployment listener --namespace $NAMESPACE"
-    run_command "kubectl delete cronjob.batch/publisher-cronjob --namespace $NAMESPACE"
-    run_command "kubectl delete deployment redis-deployment --namespace $NAMESPACE"
-    run_command "kubectl delete service rabbitmq --namespace $NAMESPACE"
-    run_command "kubectl delete service redis --namespace $NAMESPACE"
-    run_command "kubectl delete pod/network-test-pod --namespace $NAMESPACE"
-    run_command "kubectl delete configmap/publisher-appsettings-config --namespace $NAMESPACE"
-    run_command "kubectl delete configmap/listener-appsettings-config --namespace $NAMESPACE"
-
-    echo "Deleting RabbitMQ ScaledObject..."
-    run_command "kubectl delete scaledobject rabbitmq-scaledobject --namespace $NAMESPACE"
-
-    echo "Verifying deletions..."
-    run_command "kubectl get deployments --namespace $NAMESPACE"
-    run_command "kubectl get services --namespace $NAMESPACE"
-    run_command "kubectl get pods --namespace $NAMESPACE"
-    run_command "kubectl get scaledobjects --namespace $NAMESPACE"
+    run_command "helm uninstall keda --namespace $NAMESPACE"
+    run_command "kubectl delete pod toolbox --namespace $NAMESPACE"
 }
 
-# Main menu
-echo "Choose an action:"
-echo "1. Start Services"
-echo "2. Validate Services"
-echo "3. Port Forward RabbitMQ"
-echo "4. Uninstall Services"
-read -p "Enter your choice [1-4]: " choice
+# Function to uninstall services (Listener and Publisher)
+uninstall_services() {
+    echo "Uninstalling Listener and Publisher services..."
 
-case $choice in
-    1)
-        start_services
-        ;;
-    2)
-        validate_services
-        ;;
-    3)
-        port_forward
-        ;;
-    4)
-        uninstall_services
-        ;;
-    *)
-        echo "Invalid choice!"
-        ;;
-esac
+    # Uninstall Listener and Publisher chart
+    run_command "helm uninstall listener-publisher --namespace $NAMESPACE"
+
+    echo "Services uninstalled successfully!"
+}
+
+# Function to configure Kubernetes credentials
+credentials_apply() {
+    run_command "gcloud container clusters get-credentials bbg-zak-gke-cluster --region me-west1"
+}
+
+
+# Main menu loop
+while true; do
+    clear
+    echo -e "\033[1;36m#################################################################\033[0m"
+    echo -e "\033[1;36m#           BBG ZAK - Kubernetes Management  [Nadav Chen]         #\033[0m"
+    echo -e "\033[1;36m#################################################################\033[0m"
+    echo ""
+    echo -e "\033[1;33mSelect an action from the list below:\033[0m"
+    echo -e "\033[1;32m[1]\033[0m Start Dependencies (Redis, RabbitMQ, etc.)"
+    echo -e "\033[1;32m[2]\033[0m Start Services (Listener and Publisher)"
+    echo -e "\033[1;32m[3]\033[0m Validate Services (Check Deployments, Pods)"
+    echo -e "\033[1;32m[4]\033[0m Uninstall Dependencies"
+    echo -e "\033[1;32m[5]\033[0m Uninstall Services"
+    echo -e "\033[1;31m[6]\033[0m Exit"
+    echo ""
+    echo -e "\033[1;33mEnter your choice (1-6):\033[0m"
+    read -p "> " choice
+
+    case $choice in
+        1)
+            start_dependencies
+            ;;
+        2)
+            start_services
+            ;;
+        3)
+            validate_services
+            ;;
+        4)
+            uninstall_dependencies
+            ;;
+        5)
+            uninstall_services
+            ;;
+        6)
+            echo "Exiting..."
+            exit 0
+            ;;
+        *)
+            echo -e "\033[1;31mInvalid choice! Please select a valid option.\033[0m"
+            ;;
+    esac
+
+    # Pause and prompt to return to the menu
+    echo -e "\n\033[1;33mPress Enter to return to the menu...\033[0m"
+    read
+done
+
+

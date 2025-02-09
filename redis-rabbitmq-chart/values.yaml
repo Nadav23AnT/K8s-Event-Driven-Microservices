@@ -1,0 +1,46 @@
+namespace: dev
+
+redis:
+  image:
+    repository: # Image location
+    tag: # Image tag
+  port: 6379
+
+rabbitmq:
+  loadBalancerIP: # static load balancer
+    ports:
+      amqp:
+        port: 81
+        targetPort: 5672
+      management:
+        port: 80
+        targetPort: 15672
+  scaledObject:
+    scaleTargetRef:
+      deployment: listener-primary
+    minReplicaCount: 0
+    maxReplicaCount: 100
+    pollingInterval: 5
+    cooldownPeriod: 15
+    trigger:
+      host: amqp://myuser:mypassword@rabbitmq:5672/
+      protocol: auto
+      mode: QueueLength
+      value: "50"
+      queueName: ZakautDrisha
+
+nodeAffinity:
+  primary_nodepool: primary
+  base_nodepool: base
+
+nodePools:
+  base:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: nodepool
+                operator: In
+                values:
+                  - base
+

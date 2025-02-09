@@ -1,87 +1,196 @@
+# BBG-Test Cluster
 
 
-# Kubernetes GKE Architecture with RabbitMQ, Redis, and KEDA
 
-This repository contains the infrastructure and configuration files for deploying a scalable architecture on **Google Kubernetes Engine (GKE)**. The architecture includes **RabbitMQ**, **Redis**, and **KEDA** for event-driven autoscaling, with configuration settings for the **Listener** and **Publisher** pods.
 
-![Architecture Diagram](https://github.com/Nadav23AnT/K8s-Event-Driven-Microservices/blob/main/A%20detailed%20architecture%20diagram%20illustrating%20how%20GKE%2C%20RabbitMQ%2C%20Redis%2C%20and%20KEDA%20work%20together%20in%20an%20event-driven%20microservices%20setup.png)
+## 🌟 Overview
+The **BBG-Test Project** showcases a cutting-edge Kubernetes-based architecture designed to facilitate seamless communication between a **RabbitMQ Listener** and a **Publisher**. This system is built for scalable, efficient message processing while leveraging Kubernetes for robust container orchestration.
 
-## Overview
 
-The system is designed to process workloads asynchronously, using RabbitMQ as the messaging queue, Redis for caching, and KEDA for auto-scaling based on the number of messages in the RabbitMQ queue. The architecture also uses Kubernetes ConfigMaps to store configuration files for the Listener and Publisher pods.
-
----
-
-## Components
-
-- **GKE (Google Kubernetes Engine)**: Hosts the Kubernetes cluster where the architecture is deployed.
-- **Listener Pod**: Reads data and sends tasks to RabbitMQ and Redis.
-- **Publisher Pods**: Consumes tasks from RabbitMQ and scales according to the queue size using KEDA.
-- **Redis**: In-memory data store used for caching.
-- **RabbitMQ**: Messaging broker that handles tasks.
-- **KEDA**: Autoscaler that scales Publisher pods based on RabbitMQ message queue length.
-- **ConfigMaps**: Stores configuration files used by Listener and Publisher pods.
+## 🚀 Key Features
+- **🔗 RabbitMQ Integration**: Facilitates message queuing and seamless data exchange.
+- **🔁 Listener & Publisher**: Core components for processing and publishing messages.
+- **⚡ Redis Cache**: Enhances performance with efficient temporary data storage.
+- **📈 Scalable Architecture**: Ensures resilience and adaptability via Kubernetes.
+- **📊 KEDA Integration**: Dynamically scales Listener pods based on queue load.
+- **📦 Helm Charts**: Simplifies deployment of core components.
 
 ---
 
-## Start Script (`start.sh`)
+## 🏗️ Architecture
+The system comprises the following key components:
 
-This repository includes a **start.sh** script, which automates the deployment and management of services within the GKE cluster. The script allows you to start services, validate deployments, forward ports for RabbitMQ, and uninstall services.
+### 🐇 RabbitMQ
+- **Role**: Acts as the message broker for data exchange between Listener and Publisher pods.
+- **Capabilities**: Efficient queue management and message routing.
 
-> **Note:**  
-> The `start.sh` script is a temporary solution to quickly test and validate the system. For production environments, it's recommended to use proper CI/CD pipelines with tools like **ArgoCD** to manage deployments, updates, and monitoring in a more scalable and maintainable way.
+### 🔍 Redis
+- **Role**: Temporary caching for enhanced message processing.
+- **Benefit**: Boosts system performance.
 
-### Script Actions
+### 📤 Publisher Pod
+- **Tasks**: 
+  - Reads data from an **Oracle Database**.
+  - Publishes messages to RabbitMQ queues.
+  - Pushes container images to Artifact Registry.
 
-1. **Start Services**:
-   - Deploys RabbitMQ and KEDA using Helm.
-   - Deploys Redis, Listener, and Publisher services.
-   - Creates necessary ConfigMaps for storing configuration files for Listener and Publisher.
-   - Launches a test pod for network validation.
+### 📥 Listener Pods
+- **Triggered By**: Incoming RabbitMQ messages via KEDA.
+- **Responsibilities**:
+  - Processes messages.
+  - Writes results back to the **Oracle Database**.
 
-2. **Validate Services**:
-   - Validates that deployments, pods, and services are running successfully.
-   - Lists the active deployments, pods, services, and cronjobs in the namespace.
+### 📈 KEDA (Kubernetes Event-Driven Autoscaling)
+- **Purpose**: Monitors RabbitMQ queues and dynamically adjusts Listener pod count based on load.
 
-3. **Port Forward RabbitMQ**:
-   - Opens a port-forward session to access the RabbitMQ management interface on `localhost:15672`.
+### 🏬 Artifact Registry
+- **Function**: Repository for Publisher and Listener container images.
 
-4. **Uninstall Services**:
-   - Uninstalls RabbitMQ and KEDA Helm charts.
-   - Deletes Redis, Listener, Publisher services, and associated Kubernetes resources (ConfigMaps, test pod).
-
-### Running the Script
-
-To execute the script, follow these steps:
-
-1. **Ensure the script is executable**:
-   ```bash
-   chmod +x start.sh
-   ```
-
-2. **Run the script**:
-   ```bash
-   ./start.sh
-   ```
-
-3. **Choose an action** when prompted:
-   - `1`: Start Services
-   - `2`: Validate Services
-   - `3`: Port Forward RabbitMQ
-   - `4`: Uninstall Services
+### 🗄️ Oracle Database
+- **Role**: Serves as the main data store.
+- **Integration**: Used by both Publisher and Listener components for data operations.
 
 ---
 
-## Future Enhancements
-
-- **Prometheus Integration**: Add Prometheus for monitoring the health and performance of the system.
-- **Grafana Integration**: Implement Grafana for better visualization of the metrics collected by Prometheus.
-- **ILB for RabbitMQ**: Instead of using port forwarding, configure an **Internal Load Balancer (ILB)** to expose RabbitMQ as a service within the cluster.
-- **CI/CD Pipeline**: Replace the `start.sh` script with a robust CI/CD pipeline using **ArgoCD** or similar tools for production-ready deployments.
+## 📋 Prerequisites
+- **Kubernetes Cluster**: A functioning cluster is required.
+- **Helm**: Installed for managing charts.
+- **kubectl**: CLI tool for Kubernetes management.
+- **Docker**: To build and manage container images.
+- **RabbitMQ & Redis**: Pre-deployed on Kubernetes.
 
 ---
 
-## License
+## 📂 Folder Structure
+The repository contains the following folders and files:
 
-This project is licensed under the MIT License 
+```
+BBG-Test
+│
+├── keda
+│   └── (KEDA ScaledObject definitions for autoscaling Listener pods)
+│
+├── listener-publisher-chart
+│   ├── files
+│   │   └── appsettings
+│   │       ├── listen-conf
+│   │       │   └── appsettings.dev.json   # Configuration for the Listener component
+│   │       ├── publish-conf
+│   │       │   └── appsettings.dev.json   # Configuration for the Publisher component
+│   ├── templates
+│   │   ├── Chart.yaml                     # Helm chart definition
+│   │   └── values.yaml                    # Default Helm values for Listener & Publisher
+│
+├── rabbitmq
+│   ├── charts
+│   ├── templates
+│   │   ├── Chart.yaml                     # RabbitMQ Helm chart definition
+│   │   ├── values.yaml                    # Configuration for RabbitMQ deployment
+│   │   ├── values.schema.json             # Schema for Helm values
+│   ├── README.md                          # Documentation for RabbitMQ setup
+│   └── Chart.lock                         # Helm chart lock file
+│
+├── redis-rabbitmq-chart
+│   ├── templates
+│   │   ├── rabbitmq-internal-lb.yaml      # Configuration for RabbitMQ internal load balancer
+│   │   ├── rabbitmq-scaledobject.yaml     # KEDA ScaledObject for RabbitMQ autoscaling
+│   │   ├── redis-deployment.yaml          # Deployment configuration for Redis
+│   │   ├── redis-service.yaml             # Service definition for Redis
+│   ├── Chart.yaml                         # Helm chart definition for combined Redis and RabbitMQ
+│   └── values.yaml                        # Configuration for Redis and RabbitMQ
+│
+├── start.sh                               # Script to bootstrap and deploy components
+└── README.md                              # Main project documentation
+```
+
+
+
+
+### Explanation of Folders:
+- **`keda`**: Contains the YAML definitions for KEDA ScaledObjects used to autoscale Listener pods dynamically based on RabbitMQ queue metrics.
+- **`listener-publisher-chart`**: Helm chart definitions for deploying Listener and Publisher pods.
+  - **`files/appsettings`**: Configuration files for the Listener (`listen-conf`) and Publisher (`publish-conf`).
+  - **`templates`**: Contains Helm templates, `Chart.yaml`, and `values.yaml` for the Listener and Publisher deployments.
+- **`rabbitmq`**: Contains Helm charts and templates for deploying RabbitMQ with configuration files.
+  - **`values.schema.json`**: Defines the schema for Helm values to ensure consistency.
+- **`redis-rabbitmq-chart`**: Contains the Helm chart for deploying both Redis and RabbitMQ in a single deployment.
+- **`start.sh`**: A script for automating deployments and bootstrapping the environment.
+- **`README.md`**: Main project documentation for deployment and usage.
+
+---
+
+## 🛠️ Deployment Steps
+
+### Step 1️⃣: Clone the Repository
+```bash
+git clone <repository-url>
+cd bbg-test
+```
+
+### Step 2️⃣: Change variables values
+all comments with "# image location" and "# iamge tag" insert the correct location
+and make sure the namespace are fine with your other depoloyments (default namespace "dev")
+
+
+### Step 3️⃣: Deploy RabbitMQ and Redis
+Run the script `./start.sh`
+```bash
+./start.sh
+```
+
+### Step 4️⃣: Verify Deployment
+Check the pod status:
+```bash
+kubectl get pods
+```
+Ensure all pods (RabbitMQ, Redis, Publisher, Listener) are running smoothly.
+
+### Test the System
+- Confirm RabbitMQ queues are operational and Publisher is sending messages.
+- Validate Listener logs for processed messages.
+- Ensure data is correctly written to the Oracle Database.
+
+---
+
+## ⚙️ Configuration
+### Essential Environment Variables
+- `RABBITMQ_HOST`: Address of the RabbitMQ server.
+- `REDIS_HOST`: Address of the Redis server.
+- `ORACLE_DB_URL`: Oracle Database connection string.
+- `QUEUE_NAME`: Name of the RabbitMQ queue.
+
+Set these variables in the deployment files for both Listener and Publisher.
+
+---
+
+## 🛠️ Troubleshooting
+
+### Common Issues
+- **Pods Pending**: Check resource availability in the Kubernetes cluster.
+- **Connection Problems**: Verify RabbitMQ, Redis, and Oracle configuration.
+- **Error Logs**: Inspect pod logs for troubleshooting:
+```bash
+kubectl logs <pod-name>
+```
+
+---
+
+## 📈 Future Enhancements
+- **CI/CD Integration**: Automate deployments.
+- **Monitoring**: Add metrics and visualization via Prometheus and Grafana.
+- **High Availability**: Scale RabbitMQ and Redis for large workloads.
+
+---
+
+## 📝 License
+This project is licensed under the MIT License. See the LICENSE file for full details.
+
+---
+
+## ✍️ Author
+**Nadav Chen**
+- **GitHub**: [Nadav23AnT](https://github.com/Nadav23AnT/)
+- **LinkedIn**: [Nadav Chen](https://www.linkedin.com/in/nadavchen97/)
+
+---
 

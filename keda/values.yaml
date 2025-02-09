@@ -9,15 +9,15 @@ global:
 
 image:
   keda:
-    registry: me-west1-docker.pkg.dev/dgt-gcp-moe-devops/bbg-gke-test
+    registry: # Image location
     repository: keda
     tag: "2.15.0"
   metricsApiServer:
-    registry: me-west1-docker.pkg.dev/dgt-gcp-moe-devops/bbg-gke-test
+    registry: # Image location
     repository: keda-metrics-apiserver
     tag: "2.15.0"
   webhooks:
-    registry: me-west1-docker.pkg.dev/dgt-gcp-moe-devops/bbg-gke-test
+    registry: # Image location
     repository: keda-admission-webhooks
     tag: "2.15.0"
   # -- Image pullPolicy for all KEDA components

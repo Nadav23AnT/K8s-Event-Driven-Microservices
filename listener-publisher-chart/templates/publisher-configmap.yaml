@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: publisher-appsettings-config
+  namespace: {{ .Values.namespace }}
+data:
+  appsettings.dev.json: |
+{{ .Files.Get "files/appsettings/publish-conf/appsettings.dev.json" | indent 4 }}

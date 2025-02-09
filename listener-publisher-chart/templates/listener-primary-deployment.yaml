@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: listener-primary
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.listener.replicaCount }} # Remaining replicas on the primary node
+  selector:
+    matchLabels:
+      app: listener
+      role: {{ .Values.nodeAffinity.primary_nodepool }}
+  template:
+    metadata:
+      labels:
+        app: listener
+        role: {{ .Values.nodeAffinity.primary_nodepool }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution: # Strict rules
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: nodepool
+                    operator: In
+                    values:
+                      - {{ .Values.nodeAffinity.primary_nodepool }}
+                      # - {{ .Values.nodeAffinity.base_nodepool }}
+          # preferredDuringSchedulingIgnoredDuringExecution: # Dynamic preferences
+          #   - weight: 100 # Strong preference for bbg-primary if replicas > 1
+          #     preference:
+          #       matchExpressions:
+          #         - key: nodepool
+          #           operator: In
+          #           values:
+          #             - {{ .Values.nodeAffinity.primary_nodepool }}
+            # - weight: 1 # Lesser preference for bbg-base if replicas = 1
+            #   preference:
+            #     matchExpressions:
+            #       - key: nodepool
+            #         operator: In
+            #         values:
+            #           - {{ .Values.nodeAffinity.base_nodepool }}
+      tolerations: # Allow scheduling on tainted primary nodes
+        - key: "nodepool"
+          operator: "Equal"
+          value: {{ .Values.nodeAffinity.primary_nodepool }}
+          effect: "NoSchedule" # Match the taint effect on primary nodes
+      containers:
+      - name: listener
+        image: {{ .Values.listener.image.repository }}@{{ .Values.listener.image.tag }}
+        resources:
+          requests:
+            memory: {{ .Values.listener.resources.requests.memory }}
+            cpu: {{ .Values.listener.resources.requests.cpu }}
+          limits:
+            memory: {{ .Values.listener.resources.limits.memory }}
+            cpu: {{ .Values.listener.resources.limits.cpu }}
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: {{ .Values.listener.env.ASPNETCORE_ENVIRONMENT }}
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/appsettings.dev.json
+          subPath: appsettings.dev.json
+      volumes:
+      - name: config-volume
+        configMap:
+          name: listener-appsettings-config
